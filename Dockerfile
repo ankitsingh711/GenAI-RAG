@@ -29,4 +29,7 @@ RUN uv run python lessons/04_chunk_and_ingest.py
 # Render (and most hosts) inject $PORT. Bind 0.0.0.0 so it's reachable, default 8000.
 ENV PORT=8000
 EXPOSE 8000
-CMD uv run uvicorn documind.api.app:app --host 0.0.0.0 --port ${PORT}
+# JSON-array form + `exec` so uvicorn runs as PID 1 and receives SIGTERM directly —
+# that gives a graceful shutdown when the host stops or redeploys the container.
+# `sh -c` is needed only to expand $PORT at runtime.
+CMD ["sh", "-c", "exec .venv/bin/uvicorn documind.api.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

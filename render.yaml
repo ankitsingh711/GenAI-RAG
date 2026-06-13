@@ -1,0 +1,19 @@
+# Render Blueprint — deploys the DocuMind backend as a Docker web service.
+# In Render: New > Blueprint > point at this repo. Render reads this file.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: documind-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free            # 512 MB RAM. Bump to "starter" if the model OOMs on cold start.
+    healthCheckPath: /health
+    autoDeploy: true      # redeploy on every push to the connected branch
+    envVars:
+      # Secret — set the value in the Render dashboard (never commit it).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Your deployed frontend origin (the Vercel URL), e.g. https://your-app.vercel.app
+      # Set this AFTER the first Vercel deploy so CORS allows the browser to call the API.
+      - key: FRONTEND_ORIGIN
+        sync: false

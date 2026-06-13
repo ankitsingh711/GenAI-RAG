@@ -20,6 +20,8 @@ Interactive docs (FastAPI gives these free): http://localhost:8000/docs
 
 from __future__ import annotations
 
+import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,13 +38,15 @@ from documind.core.rag import RagEngine  # noqa: E402  (must follow load_dotenv)
 
 app = FastAPI(title="DocuMind", description="RAG document Q&A over your ingested files.")
 
-# CORS: the browser blocks a page on http://localhost:3000 (the Next.js frontend)
-# from calling an API on http://localhost:8000 unless the API explicitly allows it.
-# This middleware adds the headers that grant that permission. In production, lock
-# `allow_origins` down to your real frontend domain — never use "*" with credentials.
+# CORS: the browser blocks a page on the frontend's origin from calling this API on a
+# different origin unless the API explicitly allows it. localhost:3000 is always allowed
+# for local dev; in production set FRONTEND_ORIGIN to your deployed frontend URL (the
+# Vercel domain), comma-separated if you have more than one. Never use "*" here.
+_origins = ["http://localhost:3000"]
+_origins += [o.strip() for o in os.getenv("FRONTEND_ORIGIN", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

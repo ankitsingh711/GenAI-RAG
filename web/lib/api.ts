@@ -21,6 +21,27 @@ export async function getSources(): Promise<SourceDoc[]> {
   return data.documents as SourceDoc[];
 }
 
+/** Upload a document (PDF/TXT/MD) to be chunked, embedded, and indexed. */
+export async function uploadDocument(file: File): Promise<SourceDoc> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/upload`, { method: "POST", body: form });
+  if (!res.ok) {
+    // FastAPI puts validation errors in `detail`.
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.detail ?? `Upload failed (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Remove a document (and all its chunks) from the index. */
+export async function deleteDocument(source: string): Promise<void> {
+  const res = await fetch(`${API_URL}/documents/${encodeURIComponent(source)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+}
+
 /**
  * Stream an answer for `question`. Calls `onToken` for every chunk of text the
  * backend emits. Pass `signal` to allow cancelling an in-flight request.

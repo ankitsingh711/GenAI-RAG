@@ -74,9 +74,23 @@ Both hosts auto-deploy on push to `main`:
 - Push backend changes → Render rebuilds the image (re-ingests the sample doc).
 - Push frontend changes → Vercel rebuilds.
 
-To change which documents are indexed in production, add files under `data/` and push —
-they're baked into the image at build time. (A nicer long-term design is an upload
-endpoint writing to a persistent disk or object storage; see `docs/production.md`.)
+To change which documents are *baked in*, add files under `data/` and push — they're
+ingested into the image at build time.
+
+### Uploads in production (important caveat)
+
+The UI's drag-drop upload writes to the index on the container's local disk
+(`/app/chroma_db`). On Render's **free tier there is no persistent disk**, so uploaded
+documents survive only until the container restarts or sleeps — after that the index
+reverts to whatever was baked in at build (the sample handbook). This is fine for a demo.
+
+To make uploads durable, two options:
+1. **Render persistent disk** (paid): add a disk mounted at `/app/chroma_db`. But a fresh
+   disk shadows the baked-in index, so move ingestion from build-time to a startup step
+   that seeds the disk only when empty.
+2. **External vector store** (the real production answer): point ChromaDB at a hosted
+   store, or switch to pgvector/Qdrant/Pinecone so the index lives outside the container.
+   See `docs/production.md` → State and scale.
 
 ## Run it locally (unchanged)
 

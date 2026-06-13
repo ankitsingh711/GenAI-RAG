@@ -23,7 +23,7 @@ from __future__ import annotations
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -76,6 +76,41 @@ def health() -> dict:
 def sources() -> dict:
     """List the documents currently indexed, so the UI can display them."""
     return {"documents": engine.list_sources()}
+
+
+ALLOWED_EXTENSIONS = {".pdf", ".txt", ".md"}
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)) -> dict:
+    """Ingest an uploaded document (PDF/TXT/MD) into the vector index.
+
+    Validates type and size, then chunks + embeds + stores it. The same retrieve→
+    generate path then answers questions about it immediately — no restart needed.
+    """
+    name = file.filename or "upload"
+    ext = os.path.splitext(name)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, f"Unsupported type '{ext}'. Upload a PDF, TXT, or MD file.")
+
+    raw = await file.read()
+    if len(raw) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "File too large (max 10 MB).")
+    if not raw:
+        raise HTTPException(400, "The file is empty.")
+
+    chunks = engine.ingest_file(name, raw)
+    if chunks == 0:
+        raise HTTPException(400, "Couldn't extract any text (is the PDF scanned/image-only?).")
+    return {"source": name, "chunks": chunks}
+
+
+@app.delete("/documents/{source}")
+def delete_document(source: str) -> dict:
+    """Remove a document and all its chunks from the index."""
+    engine.delete_source(source)
+    return {"deleted": source}
 
 
 @app.post("/ask")

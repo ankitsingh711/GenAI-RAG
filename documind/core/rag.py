@@ -10,12 +10,14 @@ in a class with its connections initialised once. That's the normal path from
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 from typing import Iterator
 
 import chromadb
 from anthropic import Anthropic
 from chromadb.utils import embedding_functions
+from pypdf import PdfReader
 
 # Project root = two levels up from this file (documind/core/rag.py -> project/).
 _ROOT = Path(__file__).resolve().parent.parent.parent
@@ -29,6 +31,16 @@ SYSTEM_PROMPT = (
 )
 
 
+def chunk_text(text: str, size: int = 700, overlap: int = 100) -> list[str]:
+    """Split text into overlapping character windows (same approach as lesson 04)."""
+    text = " ".join(text.split())
+    chunks, start = [], 0
+    while start < len(text):
+        chunks.append(text[start:start + size])
+        start += size - overlap
+    return chunks
+
+
 class RagEngine:
     """Holds the vector store + LLM client; answers questions against ingested docs."""
 
@@ -38,8 +50,37 @@ class RagEngine:
         self._llm = Anthropic()
 
     def _collection(self):
-        # Fetched per call so a re-ingest (new collection) is picked up without restart.
-        return self._chroma.get_collection(name=COLLECTION, embedding_function=self._embed)
+        # get_or_create so uploads work even against a fresh, empty index (and so a
+        # re-ingest is picked up without a restart).
+        return self._chroma.get_or_create_collection(name=COLLECTION, embedding_function=self._embed)
+
+    def ingest_file(self, filename: str, raw: bytes) -> int:
+        """Extract text from an uploaded file, chunk it, and add it to the index.
+
+        Returns the number of chunks added. Re-uploading the same filename replaces
+        its previous chunks (so you can fix and re-upload without duplicates).
+        """
+        if filename.lower().endswith(".pdf"):
+            text = "\n".join(p.extract_text() or "" for p in PdfReader(io.BytesIO(raw)).pages)
+        else:  # .txt / .md
+            text = raw.decode("utf-8", errors="ignore")
+
+        chunks = chunk_text(text)
+        if not chunks:
+            return 0
+
+        col = self._collection()
+        col.delete(where={"source": filename})  # replace any prior version
+        col.add(
+            documents=chunks,
+            ids=[f"{filename}::chunk_{i}" for i in range(len(chunks))],
+            metadatas=[{"source": filename, "chunk": i} for i in range(len(chunks))],
+        )
+        return len(chunks)
+
+    def delete_source(self, source: str) -> None:
+        """Remove every chunk that came from `source` from the index."""
+        self._collection().delete(where={"source": source})
 
     def list_sources(self) -> list[dict]:
         """Return the ingested documents and how many chunks each produced.

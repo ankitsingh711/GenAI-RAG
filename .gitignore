@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# secrets
+.env
+
+# data & vector store
+data/*
+!data/.gitkeep
+!data/sample_handbook.txt
+*.chroma
+chroma_db/

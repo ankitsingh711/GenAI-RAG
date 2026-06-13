@@ -1,0 +1,45 @@
+ACME Cloud — Customer Handbook
+
+ABOUT ACME CLOUD
+ACME Cloud is a managed hosting platform for web applications. We handle servers,
+scaling, and backups so engineering teams can focus on shipping product. Founded in
+2019, we serve over 4,000 companies.
+
+PLANS AND PRICING
+We offer three plans. The Starter plan is $29 per month and includes 2 instances,
+10 GB of storage, and community support. The Growth plan is $99 per month and includes
+10 instances, 100 GB of storage, and email support with a 24-hour response time. The
+Enterprise plan has custom pricing and includes unlimited instances, dedicated support,
+a 1-hour response SLA, and single sign-on.
+
+BILLING
+Customers are billed on the first day of each month. We accept credit cards and, for
+Enterprise customers, bank transfer. If a payment fails, we retry it after three days.
+Accounts more than 14 days overdue are suspended until payment is made. To request a
+refund, contact billing@acme.example within 30 days of the charge.
+
+RESETTING YOUR PASSWORD
+If you forget your password, click the "Forgot password" link on the login page. You
+will receive a reset email within five minutes. The reset link expires after one hour.
+If the email does not arrive, check your spam folder or contact support.
+
+BACKUPS AND DATA RETENTION
+We take automatic daily backups of all customer databases and retain them for 30 days.
+Growth and Enterprise customers can trigger on-demand backups from the dashboard.
+Backups are stored encrypted in a separate region from your primary instances.
+
+SCALING
+The platform autoscales horizontally based on CPU usage. When average CPU across your
+instances exceeds 70 percent for five minutes, a new instance is added automatically,
+up to your plan's limit. Scaling down happens when CPU stays below 30 percent for
+fifteen minutes.
+
+SUPPORT CHANNELS
+Starter customers use the community forum. Growth customers get email support at
+support@acme.example. Enterprise customers get a dedicated Slack channel and a named
+account manager. Our status page at status.acme.example shows real-time incidents.
+
+CANCELLATION
+You can cancel at any time from the billing settings page. Cancellation takes effect at
+the end of the current billing period; we do not pro-rate partial months. Your data is
+retained for 30 days after cancellation, after which it is permanently deleted.
